@@ -2,38 +2,70 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const jwt = require('jsonwebtoken');
-
-require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
+
+require('dotenv').config()
 app.use(express.json())
 app.use(cors())
+
 
 app.get('/', async(req, res) => {
     res.send('hello')
 })
 
 
+const uri = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@cluster0.uzz7izn.mongodb.net/?retryWrites=true&w=majority`;
 
-// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.uzz7izn.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-// function verifyJWT(req, res, next) {
-//     const authHeader = req.headers.authorization;
+
+async function run(){
+    try{
+        const resellProductCollections = client.db('resellProducts').collection('resellProductCollection');
+        const usersCollections = client.db('resellProducts').collection('usersCollection');
+
+        app.get('/products', async(req, res) => {
+            const query = {}
+            const result = await resellProductCollections.find(query).toArray();
+            res.send(result)
+        })
+
+        app.post('/products', async(req, res) => {
+            const product = req.body;
+            const result = await resellProductCollections.insertOne(product);
+            res.send(result)
+        })
+
+        app.post('/users', async(req, res) => {
+            const user = req.body;
+            const result = await usersCollections.insertOne(user);
+            res.send(result)
+        })
+    }
+    finally{
+
+    }
+}
+run().catch(console.log)
+
+
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
     
-//     if(!authHeader){
-//         res.status(403).send('unauthorized')
-//     }
-//     const token = authHeader.split(' ')[1];
-//     // console.log(token)
-//     jwt.verify(token, process.env.ACCESS_TOKEN, function(err, decoded){
-//         if(err){
-//             return res.status(403).send({message: 'accesss forbidden'})
-//         }
-//         req.decoded = decoded;
-//         next()
-//     })
-// }
+    if(!authHeader){
+        res.status(403).send('unauthorized')
+    }
+    const token = authHeader.split(' ')[1];
+    // console.log(token)
+    jwt.verify(token, process.env.ACCESS_TOKEN, function(err, decoded){
+        if(err){
+            return res.status(403).send({message: 'accesss forbidden'})
+        }
+        req.decoded = decoded;
+        next()
+    })
+}
 
 // async function run(){
 //     try{
