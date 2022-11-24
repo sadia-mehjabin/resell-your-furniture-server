@@ -24,9 +24,17 @@ async function run(){
     try{
         const resellProductCollections = client.db('resellProducts').collection('resellProductCollection');
         const usersCollections = client.db('resellProducts').collection('usersCollection');
+        const bookedProductsCollections = client.db('resellProducts').collection('bookedProductsCollection');
 
         app.get('/products', async(req, res) => {
             const query = {}
+            const result = await resellProductCollections.find(query).toArray();
+            res.send(result)
+        })
+
+        app.get('/products/:id', async(req, res) => {
+            const name = req.params.id;
+            const query = {'data.selectCategory': name}
             const result = await resellProductCollections.find(query).toArray();
             res.send(result)
         })
@@ -40,6 +48,12 @@ async function run(){
         app.post('/users', async(req, res) => {
             const user = req.body;
             const result = await usersCollections.insertOne(user);
+            res.send(result)
+        })
+
+        app.post('/bookedProducts', async(req, res) => {
+            const bookedProducts = req.body;
+            const result = await bookedProductsCollections.insertOne(bookedProducts);
             res.send(result)
         })
     }
