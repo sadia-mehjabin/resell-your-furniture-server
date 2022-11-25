@@ -10,7 +10,7 @@ app.use(express.json())
 app.use(cors())
 
 
-app.get('/', async(req, res) => {
+app.get('/', async (req, res) => {
     res.send('hello')
 })
 
@@ -20,73 +20,101 @@ const uri = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PAS
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
-async function run(){
-    try{
+async function run() {
+    try {
         const resellProductCollections = client.db('resellProducts').collection('resellProductCollection');
         const usersCollections = client.db('resellProducts').collection('usersCollection');
         const bookedProductsCollections = client.db('resellProducts').collection('bookedProductsCollection');
 
-        app.get('/products', async(req, res) => {
+        app.get('/products', async (req, res) => {
             const query = {}
             const result = await resellProductCollections.find(query).toArray();
             res.send(result)
         })
 
-        app.get('/products/:email', async(req, res) => {
+        app.get('/products1/:email', async (req, res) => {
             const email = req.query.email;
-            const query = {email: email}
+            const query = { email: email }
             const result = await resellProductCollections.find(query).toArray();
             res.send(result)
         })
 
-        app.get('/products/:id', async(req, res) => {
+        app.get('/products2/:id', async (req, res) => {
             const name = req.params.id;
-            const query = {'data.selectCategory': name}
+            console.log(name)
+            const query = { 'data.selectCategory': name }
             const result = await resellProductCollections.find(query).toArray();
             res.send(result)
         })
 
-        app.post('/products', async(req, res) => {
+        app.post('/products', async (req, res) => {
             const product = req.body;
             const result = await resellProductCollections.insertOne(product);
             res.send(result)
         })
 
-        app.post('/users', async(req, res) => {
+        app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await usersCollections.insertOne(user);
             res.send(result)
         })
 
-        app.post('/bookedProducts', async(req, res) => {
+        app.post('/bookedProducts', async (req, res) => {
             const bookedProducts = req.body;
             const result = await bookedProductsCollections.insertOne(bookedProducts);
             res.send(result)
         })
+
+        app.delete('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await resellProductCollections.deleteOne(filter)
+            res.send(result)
+        })
+
+        app.put('/products/:id', async (req, res) => {
+            // const decodedEmail = req.decoded.email;
+            // const query = {email: decodedEmail}
+            // const user = await usersCollections.findOne(query)
+            // if(user?.role !== 'admin'){
+            //     return res.status(403).send({message: 'forbidden'})
+            // }
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    status: 'advertised'
+                }
+            }
+            const result = await usersCollections.updateOne(filter, updatedDoc, options)
+            res.send(result)
+        })
+
     }
-    finally{
+    finally {
 
     }
 }
 run().catch(console.log)
 
 
-function verifyJWT(req, res, next) {
-    const authHeader = req.headers.authorization;
-    
-    if(!authHeader){
-        res.status(403).send('unauthorized')
-    }
-    const token = authHeader.split(' ')[1];
-    // console.log(token)
-    jwt.verify(token, process.env.ACCESS_TOKEN, function(err, decoded){
-        if(err){
-            return res.status(403).send({message: 'accesss forbidden'})
-        }
-        req.decoded = decoded;
-        next()
-    })
-}
+// function verifyJWT(req, res, next) {
+//     const authHeader = req.headers.authorization;
+
+//     if (!authHeader) {
+//         res.status(403).send('unauthorized')
+//     }
+//     const token = authHeader.split(' ')[1];
+//     // console.log(token)
+//     jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+//         if (err) {
+//             return res.status(403).send({ message: 'accesss forbidden' })
+//         }
+//         req.decoded = decoded;
+//         next()
+//     })
+// }
 
 // async function run(){
 //     try{
@@ -140,7 +168,7 @@ function verifyJWT(req, res, next) {
 //             const bookings = await bookingsCollections.find(query).toArray();
 //             res.send(bookings)
 //         })
-        
+
 
 //         app.get('/bookings/:id', async(req, res) => {
 //             const id = req.params.id;
@@ -157,9 +185,9 @@ function verifyJWT(req, res, next) {
 //                 email: booking.email,
 //                 treatment: booking.treatment
 //             }
-           
+
 //             const alreadyBooked = await bookingsCollections.find(query).toArray()
-            
+
 //             if(alreadyBooked.length){
 //                 const message = 'you have a booking'
 //                 return res.send({acknowledged: false, message})
@@ -178,7 +206,7 @@ function verifyJWT(req, res, next) {
 //             }
 //             res.status(403).send({accessToken: ''})
 //         })
-        
+
 //         app.get('/users', async(req, res) => {
 //             const query = {};
 //             const users = await usersCollections.find(query).toArray()
@@ -193,7 +221,7 @@ function verifyJWT(req, res, next) {
 //         })
 
 
-        
+
 
 //         app.post('/users', async(req, res) => {
 //             const user = req.body;
@@ -244,12 +272,6 @@ function verifyJWT(req, res, next) {
 //             res.send(result)
 //         })
 
-//         app.delete('/doctors/:id', verifyJWT, verifyAdmin, async(req, res) => {
-//             const id = req.params.id;
-//             const filter = {_id: ObjectId(id)};
-//             const result = await doctorsCollections.deleteOne(filter)
-//             res.send(result)
-//         })
 //     }
 //     finally{
 
