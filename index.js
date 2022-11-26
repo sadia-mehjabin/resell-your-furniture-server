@@ -20,6 +20,23 @@ const uri = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PAS
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+        res.status(403).send('unauthorized')
+    }
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_NEW, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'accesss forbidden' })
+        }
+        req.decoded = decoded;
+        next()
+    })
+}
+
 async function run() {
     try {
         const resellProductCollections = client.db('resellProducts').collection('resellProductCollection');
@@ -32,8 +49,18 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/products1/:email', async (req, res) => {
+        app.get('/users', async (req, res) => {
+            const query = {}
+            const result = await usersCollections.find(query).toArray();
+            res.send(result)
+        })
+
+        app.get('/products1', verifyJWT, async (req, res) => {
             const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'unauthorised action' })
+            }
             const query = { email: email }
             const result = await resellProductCollections.find(query).toArray();
             res.send(result)
@@ -41,7 +68,6 @@ async function run() {
 
         app.get('/products2/:id', async (req, res) => {
             const name = req.params.id;
-            console.log(name)
             const query = { 'data.selectCategory': name }
             const result = await resellProductCollections.find(query).toArray();
             res.send(result)
@@ -72,6 +98,12 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/usersRole', async (req, res) => {
+            const query = {};
+            const data = await usersCollections.find(query).project({ role: 1 }).toArray()
+            res.send(data)
+        })
+
         app.put('/products/:id', async (req, res) => {
             // const decodedEmail = req.decoded.email;
             // const query = {email: decodedEmail}
@@ -87,10 +119,21 @@ async function run() {
                     status: 'advertised'
                 }
             }
-            const result = await usersCollections.updateOne(filter, updatedDoc, options)
+            const result = await resellProductCollections.updateOne(filter, updatedDoc, options)
             res.send(result)
         })
 
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const user = await usersCollections.findOne(query);
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_NEW)
+                return res.send({ newAccessToken: token })
+            }
+            res.status(403).send({ newAccessToken: '' })
+
+        })
     }
     finally {
 
