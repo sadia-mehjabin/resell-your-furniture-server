@@ -98,11 +98,13 @@ async function run() {
             res.send(result)
         })
 
-        // app.get('/usersRole', async (req, res) => {
-        //     const query = {};
-        //     const data = await usersCollections.find(query).project({ role: 1 }).toArray()
-        //     res.send(data)
-        // })
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await usersCollections.deleteOne(filter)
+            res.send(result)
+        })
+
 
         app.put('/products/:id', async (req, res) => {
             // const decodedEmail = req.decoded.email;
@@ -140,6 +142,13 @@ async function run() {
             }
             const result = await usersCollections.updateOne(filter, updatedDoc, options)
             res.send(result)
+        })
+
+        app.get('/users/seller/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const user = await usersCollections.findOne(query)
+            res.send({ isSeller: user?.role === 'Seller' })
         })
 
         app.get('/users/admin/:email', async (req, res) => {
