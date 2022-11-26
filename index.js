@@ -98,11 +98,11 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/usersRole', async (req, res) => {
-            const query = {};
-            const data = await usersCollections.find(query).project({ role: 1 }).toArray()
-            res.send(data)
-        })
+        // app.get('/usersRole', async (req, res) => {
+        //     const query = {};
+        //     const data = await usersCollections.find(query).project({ role: 1 }).toArray()
+        //     res.send(data)
+        // })
 
         app.put('/products/:id', async (req, res) => {
             // const decodedEmail = req.decoded.email;
@@ -123,6 +123,32 @@ async function run() {
             res.send(result)
         })
 
+        app.put('/sellers/:id', async (req, res) => {
+            // const decodedEmail = req.decoded.email;
+            // const query = {email: decodedEmail}
+            // const user = await usersCollections.findOne(query)
+            // if(user?.role !== 'admin'){
+            //     return res.status(403).send({message: 'forbidden'})
+            // }
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    verified: 'true'
+                }
+            }
+            const result = await usersCollections.updateOne(filter, updatedDoc, options)
+            res.send(result)
+        })
+
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const user = await usersCollections.findOne(query)
+            res.send({ isAdmin: user?.role === 'admin' })
+        })
+
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
             const query = { email: email }
@@ -141,23 +167,6 @@ async function run() {
 }
 run().catch(console.log)
 
-
-// function verifyJWT(req, res, next) {
-//     const authHeader = req.headers.authorization;
-
-//     if (!authHeader) {
-//         res.status(403).send('unauthorized')
-//     }
-//     const token = authHeader.split(' ')[1];
-//     // console.log(token)
-//     jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
-//         if (err) {
-//             return res.status(403).send({ message: 'accesss forbidden' })
-//         }
-//         req.decoded = decoded;
-//         next()
-//     })
-// }
 
 // async function run(){
 //     try{
