@@ -66,6 +66,17 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/myOrders', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'unauthorised action' })
+            }
+            const query = { userEmail: email }
+            const result = await bookedProductsCollections.find(query).toArray();
+            res.send(result)
+        })
+
         app.get('/products2/:id', async (req, res) => {
             const name = req.params.id;
             const query = { 'data.selectCategory': name }
@@ -98,7 +109,13 @@ async function run() {
             res.send(result)
         })
 
-        app.delete('/users/:id', async (req, res) => {
+        app.delete('/users/:id',verifyJWT,  async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const query = {email: decodedEmail}
+            const user = await usersCollections.findOne(query)
+            if(user?.role !== 'admin'){
+                return res.status(403).send({message: 'forbidden'})
+            }
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const result = await usersCollections.deleteOne(filter)
