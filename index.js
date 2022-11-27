@@ -44,6 +44,18 @@ async function run() {
         const bookedProductsCollections = client.db('resellProducts').collection('bookedProductsCollection');
         const reportedItemsCollections = client.db('resellProducts').collection('reportedItemsCollection');
 
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            console.log('admin', email)
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail }
+            const user = await usersCollections.findOne(query)
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden' })
+            }
+            next()
+        }
+
         app.get('/products', async (req, res) => {
             const query = {}
             const result = await resellProductCollections.find(query).toArray();
@@ -53,6 +65,12 @@ async function run() {
         app.get('/users', async (req, res) => {
             const query = {}
             const result = await usersCollections.find(query).toArray();
+            res.send(result)
+        })
+
+        app.get('/reportedItems', async (req, res) => {
+            const query = {}
+            const result = await reportedItemsCollections.find(query).toArray();
             res.send(result)
         })
 
@@ -109,20 +127,21 @@ async function run() {
             res.send(result)
         })
 
-        app.delete('/products/:id', async (req, res) => {
+        app.delete('/products/:id',verifyJWT, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const result = await resellProductCollections.deleteOne(filter)
             res.send(result)
         })
 
-        app.delete('/users/:id',verifyJWT,  async (req, res) => {
-            const decodedEmail = req.decoded.email;
-            const query = {email: decodedEmail}
-            const user = await usersCollections.findOne(query)
-            if(user?.role !== 'admin'){
-                return res.status(403).send({message: 'forbidden'})
-            }
+        app.delete('/reportedItems/:id', verifyJWT,verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await reportedItemsCollections.deleteOne(filter)
+            res.send(result)
+        })
+
+        app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const result = await usersCollections.deleteOne(filter)
@@ -130,13 +149,13 @@ async function run() {
         })
 
 
-        app.put('/products/:id', async (req, res) => {
-            // const decodedEmail = req.decoded.email;
-            // const query = {email: decodedEmail}
-            // const user = await usersCollections.findOne(query)
-            // if(user?.role !== 'admin'){
-            //     return res.status(403).send({message: 'forbidden'})
-            // }
+        app.put('/products/:id',verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail }
+            const user = await usersCollections.findOne(query)
+            if (user?.role !== 'Seller') {
+                return res.status(403).send({ message: 'forbidden' })
+            }
             const id = req.params.id;
             const filter = { _id: ObjectId(id) }
             const options = { upsert: true }
@@ -149,13 +168,7 @@ async function run() {
             res.send(result)
         })
 
-        app.put('/sellers/:id', async (req, res) => {
-            // const decodedEmail = req.decoded.email;
-            // const query = {email: decodedEmail}
-            // const user = await usersCollections.findOne(query)
-            // if(user?.role !== 'admin'){
-            //     return res.status(403).send({message: 'forbidden'})
-            // }
+        app.put('/sellers/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) }
             const options = { upsert: true }
