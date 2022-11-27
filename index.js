@@ -42,6 +42,7 @@ async function run() {
         const resellProductCollections = client.db('resellProducts').collection('resellProductCollection');
         const usersCollections = client.db('resellProducts').collection('usersCollection');
         const bookedProductsCollections = client.db('resellProducts').collection('bookedProductsCollection');
+        const reportedItemsCollections = client.db('resellProducts').collection('reportedItemsCollection');
 
         app.get('/products', async (req, res) => {
             const query = {}
@@ -87,6 +88,12 @@ async function run() {
         app.post('/products', async (req, res) => {
             const product = req.body;
             const result = await resellProductCollections.insertOne(product);
+            res.send(result)
+        })
+
+        app.post('/reportedItems', async (req, res) => {
+            const product = req.body;
+            const result = await reportedItemsCollections.insertOne(product);
             res.send(result)
         })
 
